@@ -1,3 +1,4 @@
+import java.math.BigDecimal
 import java.util.*
 import kotlin.math.pow
 
@@ -61,6 +62,32 @@ fun aplicaComplementoDe2(numero: String): String {
     return numero
 }
 
+fun converteBinarioNormalizadoParaDecimal(binario: String): String {
+    val mantissa = binario.substring(startIndex = 0, endIndex = binario.indexOf("*"))
+    val binarioNormalizado = mantissa.replace("0.", "").toMutableList()
+    var expoente = binario.substring(startIndex = binario.indexOf("(")+1, endIndex = binario.indexOf(")")).toInt()
+
+    if (expoente > 0) {
+        val ponto = expoente
+        while (expoente != 0) {
+            binarioNormalizado.addLast('0')
+            expoente--
+        }
+        binarioNormalizado.add(ponto, '.')
+    } else {
+        if(expoente < 0) {
+            while (expoente != 0) {
+                binarioNormalizado.addFirst('0')
+                expoente++
+            }
+        }
+        binarioNormalizado.addFirst('.')
+        binarioNormalizado.addFirst('0')
+    }
+
+    return converteBinarioParaDecimal(binarioNormalizado.joinToString(""))
+}
+
 fun converteDecimalParaBinario(decimal: String): String {
     var ehNegativo = false
     if (decimal.contains("-")) {
@@ -75,8 +102,8 @@ fun converteDecimalParaBinario(decimal: String): String {
     //  Talvez só verificar se o fracionario é diferente de 0 e se a ultima casa do inteiro é 1
 
     if (inteiroBinario.length - 1 < precisao) {
-        val fracionarioBinario = converteFracionarioParaBinario(partes.second.toDouble(), inteiroBinario.length)
-        if (binario.isNotEmpty()) binario += "$fracionarioBinario" else binario = "0.$fracionarioBinario" // FIXME forma de formatar ta feia
+        val fracionarioBinario = converteFracionarioParaBinario(partes.second.toDouble(), inteiroBinario.length-1)
+        if (binario.isNotEmpty()) binario += fracionarioBinario else binario = "0.$fracionarioBinario" // FIXME forma de formatar ta feia
     }
     if (ehNegativo) {
         binario = aplicaComplementoDe2(binario)
@@ -104,6 +131,12 @@ fun converteBinarioFracionarioParaDecimal(binFracionario: String): Double {
 
     var decimal = 0.0
     for (i in bits.indices) {
+        /**
+         * input = 0.33333
+         * i = 52, decimal = 0.3333299999999999
+         * i = 53, decimal = 0.33332999999999996
+         * i = 54, decimal = 0.33333
+         * */
         if (bits[i] == "1") {
             decimal += 2.0.pow(-(i+1))
         }
@@ -116,4 +149,4 @@ fun converteBinarioParaDecimal(binario: String): String {
     val decimalInteiro = converteBinarioInteiroParaDecimal(partes.first) // TODO Tenho que debugar isso
     val decimalFracionario = converteBinarioFracionarioParaDecimal(partes.second)
     return "${decimalInteiro + decimalFracionario}"
-}
+} // FIXME Talvez devesse retornar um decimal

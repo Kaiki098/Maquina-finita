@@ -1,6 +1,4 @@
-import java.util.*
-import kotlin.math.pow
-
+var sinal: Boolean = false
 var precisao: Int = 0
 var lower: Int = 0
 var upper: Int = 0
@@ -22,9 +20,11 @@ fun separaPartes(numero: String): Pair<String, String> {
 
 fun normalizaNumero(binario: String): String {
     var expoente = binario.indexOf('.')
-    val bin = ("0." + binario.replace(".", "")).split("").toMutableList()
-    while (bin[3] == "0"){
-        bin.removeAt(3)
+    val bin = ("0." + binario.replace(".", ""))
+        .split("").filterNot { it.isEmpty() }.toMutableList()
+
+    while (bin[2] == "0") {
+        bin.removeAt(2)
         expoente--
     }
 
@@ -39,14 +39,17 @@ fun normalizaNumero(binario: String): String {
     return "${bin.joinToString("")}*2^($expoente)"
 }
 
+
 /**
  * Se preocupar com o zero positivo e negativo, números negativos e números racionais e irracionais do demônio 0.666
  */
 
 fun main() {
-    print("""
+    print(
+        """
     Seja Bem vindo ao emulador de Maquinas Finitas!
-    Digite primeiramente o valor da precisão: """)
+    Digite primeiramente o valor da precisão: """
+    )
     precisao = readln().toInt()
     apagaTela()
 
@@ -60,22 +63,32 @@ fun main() {
 
     println("Precisao: $precisao, lower: $lower, upper: $upper")
 
-    val min = (1 / (10 * precisao)) * 2.0.pow(lower)
-    val max = 0.1 * 10 * precisao * 2.0.pow(upper) // FIXME rever isso
-
+    val binNormalizadoMin = "0.1*2^($lower)"
+    var binMax = "0."
+    repeat(precisao) {
+        binMax += "1"
+    }
+    println("aux = $binMax")
+    val min = converteBinarioNormalizadoParaDecimal(binNormalizadoMin)
+    val max = converteBinarioNormalizadoParaDecimal("$binMax*2^($upper)")
     println("Valor decimal mínimo: $min")
     println("Valor decimal máximo: $max")
     do {
-        println("Digite um valor: ")
+        /**
+         * .dropWhile {}
+         */
+
+        println("Digite um valor ou sair: ")
         val valor = readln() // FIXME Quando digito sem ponto da pau
 
-        println("Valor decimal: $valor")
-
-        val binario = converteDecimalParaBinario(valor)
-        println("Valor binario: $binario")
-        println("Valor binario normatizado: ${normalizaNumero(binario)}")
-
-        println("Valor bin convertido para decimal: ${converteBinarioParaDecimal(binario)}") // FIXME Necessário desnormalizar primeiro
-    } while (false);
+        if (valor != "sair") {
+            println("Valor decimal: $valor")
+            val binario = converteDecimalParaBinario(valor)
+            println("Valor binario: $binario")
+            val binarioNormalizado = normalizaNumero(binario)
+            println("Valor binario normatizado: $binarioNormalizado")
+            println("Valor bin convertido para decimal: ${converteBinarioNormalizadoParaDecimal(binarioNormalizado)}") // FIXME Necessário desnormalizar primeiro
+        } else break
+    } while (true);
 
 }
