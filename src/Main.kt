@@ -1,4 +1,4 @@
-var sinal: Boolean = false
+var sinal: String = ""
 var precisao: Int = 0
 var lower: Int = 0
 var upper: Int = 0
@@ -9,9 +9,10 @@ fun apagaTela() {
 }
 
 fun separaPartes(numero: String): Pair<String, String> {
+
     return try {
-        val numeroQuebrado = numero.split('.')
-        Pair(numeroQuebrado[0], "0.${numeroQuebrado[1]}")
+        val numeroQuebrado = if (numero.contains('.')) numero.split('.') else listOf(numero, "0")
+        Pair(numeroQuebrado[0], ".${numeroQuebrado[1]}")
     } catch (e: Exception) {
         println("Não foi possível separar as partes devido ao erro: ${e.message}")
         Pair("", "")
@@ -29,10 +30,8 @@ fun normalizaNumero(binario: String): String {
     }
 
     if (expoente >= upper) { // FIXME Precisa disso?
-        expoente = upper
         println("Houve um Overflow!")
     } else if (expoente <= lower) {
-        expoente = lower
         println("Houve um Underflow")
     }
 
@@ -68,17 +67,12 @@ fun main() {
     repeat(precisao) {
         binMax += "1"
     }
-    println("aux = $binMax")
     val min = converteBinarioNormalizadoParaDecimal(binNormalizadoMin)
     val max = converteBinarioNormalizadoParaDecimal("$binMax*2^($upper)")
     println("Valor decimal mínimo: $min")
     println("Valor decimal máximo: $max")
     do {
-        /**
-         * .dropWhile {}
-         */
-
-        println("Digite um valor ou sair: ")
+        println("Digite um valor ou \"sair\": ")
         val valor = readln() // FIXME Quando digito sem ponto da pau
 
         if (valor != "sair") {
@@ -86,9 +80,8 @@ fun main() {
             val binario = converteDecimalParaBinario(valor)
             println("Valor binario: $binario")
             val binarioNormalizado = normalizaNumero(binario)
-            println("Valor binario normatizado: $binarioNormalizado")
-            println("Valor bin convertido para decimal: ${converteBinarioNormalizadoParaDecimal(binarioNormalizado)}") // FIXME Necessário desnormalizar primeiro
+            println("Valor binario normatizado: $binarioNormalizado") // FIXME negativo continua dando pau
+            println("Valor bin convertido para decimal: ${sinal + converteBinarioNormalizadoParaDecimal(binarioNormalizado)}") // FIXME Necessário desnormalizar primeiro
         } else break
     } while (true);
-
 }
