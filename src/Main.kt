@@ -8,30 +8,26 @@ fun apagaTela() {
     System.out.flush()
 }
 
-fun separaPartes(numero: String): Pair<String, String> {
-
-    return try {
-        val numeroQuebrado = if (numero.contains('.')) numero.split('.') else listOf(numero, "0")
-        Pair(numeroQuebrado[0], ".${numeroQuebrado[1]}")
-    } catch (e: Exception) {
-        println("Não foi possível separar as partes devido ao erro: ${e.message}")
-        Pair("", "")
-    }
-}
-
+/**
+ * Normaliza o número binário definindo primeiramente o expoente com valor da posição do ponto,
+ * retira o ponto e remove os 0s após o ponto até que seja encontrado o número 1 e a cada remoção
+ * diminui o valor do expoente. Avisa se ocorreu um overflow ou underflow e retorna o binário
+ * normalizado.
+ */
 fun normalizaNumero(binario: String): String {
-    var expoente = binario.indexOf('.')
+    var expoente = binario.indexOf('.') // Pega quantas casas há antes do ponto, útil para números com casas inteiras 100.1 -> expoente = 3 -> 0.1001 * 2^3
     val bin = ("0." + binario.replace(".", ""))
-        .split("").filterNot { it.isEmpty() }.toMutableList()
+        .split("").filterNot { it.isEmpty() }
+        .toMutableList() // Retira o ponto e adiciona "0." ao início. Usa filter para retirar "" que aparece no começo e final da lista
 
-    while (bin[2] == "0") {
+    while (bin[2] == "0") { // Retirar os 0s após os o ponto para a casa após o ponto ficar com o valor 1 da normalização
         bin.removeAt(2)
-        expoente--
-    }
+        expoente-- // Diminui o expoente para cada 0 perdido
+    }// 0.001 -> 0.1 * 2^(-2)
 
-    if (expoente >= upper) { // FIXME Precisa disso?
+    if (expoente > upper) {
         println("Houve um Overflow!")
-    } else if (expoente <= lower) {
+    } else if (expoente < lower) {
         println("Houve um Underflow")
     }
 
@@ -43,7 +39,14 @@ fun normalizaNumero(binario: String): String {
  * Se preocupar com o zero positivo e negativo, números negativos e números racionais e irracionais do demônio 0.666
  */
 
+/**
+ * FIXME Ainda com problema no número -163.63 para 8 de precisão, l = -5, u = 5
+ */
+
 fun main() {
+    val testeSoma = mutableListOf('1', '1', '1', '1', '1', '1')
+    somaBit(testeSoma, testeSoma.size - 1)
+    println(testeSoma)
     print(
         """
     Seja Bem vindo ao emulador de Maquinas Finitas!
@@ -73,15 +76,19 @@ fun main() {
     println("Valor decimal máximo: $max")
     do {
         println("Digite um valor ou \"sair\": ")
-        val valor = readln() // FIXME Quando digito sem ponto da pau
+        val valor = readln()
 
         if (valor != "sair") {
             println("Valor decimal: $valor")
+
             val binario = converteDecimalParaBinario(valor)
             println("Valor binario: $binario")
+
             val binarioNormalizado = normalizaNumero(binario)
-            println("Valor binario normatizado: $binarioNormalizado") // FIXME negativo continua dando pau
-            println("Valor bin convertido para decimal: ${sinal + converteBinarioNormalizadoParaDecimal(binarioNormalizado)}") // FIXME Necessário desnormalizar primeiro
+            val bitDeSinal = if (sinal == "-") "1" else "0"
+
+            println("Número normalizado armazenado em binário: $bitDeSinal $binarioNormalizado")
+            println("Valor bin convertido para decimal: ${sinal + converteBinarioNormalizadoParaDecimal(binarioNormalizado)}")
         } else break
     } while (true);
 }
