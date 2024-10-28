@@ -3,6 +3,10 @@ var precisao: Int = 0
 var lower: Int = 0
 var upper: Int = 0
 
+/**
+ * Limpa a tela movendo o cursor para o canto superior esquerdo e limpando a tela
+ * através de sequências de escape ANSI, além de limpar o buffer de saída do sistema.
+ */
 fun apagaTela() {
     print("\u001b[H\u001b[2J")
     System.out.flush()
@@ -33,15 +37,6 @@ fun normalizaNumero(binario: String): String {
 
     return "${bin.joinToString("")}*2^($expoente)"
 }
-
-
-/**
- * Se preocupar com o zero positivo e negativo, números negativos e números racionais e irracionais do demônio 0.666
- */
-
-/**
- * FIXME Ainda com problema no número -163.63 para 8 de precisão, l = -5, u = 5
- */
 
 fun main() {
     println(converteBinarioNormalizadoParaDecimal(".101*2^(2)"))
@@ -95,5 +90,5 @@ fun main() {
 
             println("Valor binario normalizado convertido para decimal: ${sinal + converteBinarioNormalizadoParaDecimal(binarioEmComplementoDe2)}")
         } else break
-    } while (true);
+    } while (true)
 }

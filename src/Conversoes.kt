@@ -98,7 +98,7 @@ fun subtraiBit(binario: MutableList<Char>, ultimo: Int): String {
         binario[ultimo] = '0'
     } else {
         binario[ultimo] = '1'
-        subtraiBit(binario, ultimo - 1);
+        subtraiBit(binario, ultimo - 1)
     }
     return binario.joinToString("")
 }
@@ -112,7 +112,6 @@ fun subtraiBit(binario: MutableList<Char>, ultimo: Int): String {
 fun somaBit(binario: MutableList<Char>, ultimo: Int): String {
     if (ultimo < 0) {
         println("Não foi possível fazer a soma, devido ao bit ser o mais significativo")
-        // TODO Talvez tacar uma exceção aqui
         return binario.joinToString("")
     }
 
