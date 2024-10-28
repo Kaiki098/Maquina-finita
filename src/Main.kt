@@ -16,12 +16,12 @@ fun apagaTela() {
  */
 fun normalizaNumero(binario: String): String {
     var expoente = binario.indexOf('.') // Pega quantas casas há antes do ponto, útil para números com casas inteiras 100.1 -> expoente = 3 -> 0.1001 * 2^3
-    val bin = ("0." + binario.replace(".", ""))
+    val bin = ("." + binario.replace(".", ""))
         .split("").filterNot { it.isEmpty() }
-        .toMutableList() // Retira o ponto e adiciona "0." ao início. Usa filter para retirar "" que aparece no começo e final da lista
-
-    while (bin[2] == "0") { // Retirar os 0s após os o ponto para a casa após o ponto ficar com o valor 1 da normalização
-        bin.removeAt(2)
+        .toMutableList() // Retira o ponto e adiciona "." ao início. Usa filter para retirar "" que aparece no começo e final da lista
+    // contains 1 por causa do zero
+    while (bin[1] == "0" && bin.contains("1")) { // Retirar os 0s após os o ponto para a casa após o ponto ficar com o valor 1 da normalização
+        bin.removeAt(1)
         expoente-- // Diminui o expoente para cada 0 perdido
     }// 0.001 -> 0.1 * 2^(-2)
 
@@ -44,9 +44,8 @@ fun normalizaNumero(binario: String): String {
  */
 
 fun main() {
-    val testeSoma = mutableListOf('1', '1', '1', '1', '1', '1')
-    somaBit(testeSoma, testeSoma.size - 1)
-    println(testeSoma)
+    println(converteBinarioNormalizadoParaDecimal(".101*2^(2)"))
+
     print(
         """
     Seja Bem vindo ao emulador de Maquinas Finitas!
@@ -65,8 +64,8 @@ fun main() {
 
     println("Precisao: $precisao, lower: $lower, upper: $upper")
 
-    val binNormalizadoMin = "0.1*2^($lower)"
-    var binMax = "0."
+    val binNormalizadoMin = ".1*2^($lower)"
+    var binMax = "."
     repeat(precisao) {
         binMax += "1"
     }
@@ -74,6 +73,7 @@ fun main() {
     val max = converteBinarioNormalizadoParaDecimal("$binMax*2^($upper)")
     println("Valor decimal mínimo: $min")
     println("Valor decimal máximo: $max")
+
     do {
         println("Digite um valor ou \"sair\": ")
         val valor = readln()
@@ -82,13 +82,18 @@ fun main() {
             println("Valor decimal: $valor")
 
             val binario = converteDecimalParaBinario(valor)
-            println("Valor binario: $binario")
-
             val binarioNormalizado = normalizaNumero(binario)
+            val binarioEmComplementoDe1 = if (sinal.contains("-")) aplicaComplementoDe1(binarioNormalizado) else binarioNormalizado
+            val binarioEmComplementoDe2 = if (sinal.contains("-")) aplicaComplementoDe2(binarioNormalizado) else binarioNormalizado
             val bitDeSinal = if (sinal == "-") "1" else "0"
 
-            println("Número normalizado armazenado em binário: $bitDeSinal $binarioNormalizado")
-            println("Valor bin convertido para decimal: ${sinal + converteBinarioNormalizadoParaDecimal(binarioNormalizado)}")
+            println("Binário encontrado: $binario")
+            println("Número normalizado armazenado em binário: $binarioNormalizado")
+            println("Em S/A: $bitDeSinal $binarioNormalizado")
+            println("Em complemento de 1: $bitDeSinal $binarioEmComplementoDe1")
+            println("Em complemento de 2: $bitDeSinal $binarioEmComplementoDe2")
+
+            println("Valor binario normalizado convertido para decimal: ${sinal + converteBinarioNormalizadoParaDecimal(binarioEmComplementoDe2)}")
         } else break
     } while (true);
 }

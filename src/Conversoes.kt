@@ -6,14 +6,14 @@ import kotlin.math.absoluteValue
 /**
  * Converte um valor inteiro para binário, usando divisões sucessivas por 2 e
  * armazenando em uma pilha e depois desempilhando ela para obter os bits na ordem
- * correta. Pode retornar o valor já truncado.
+ * correta. Avisa se for retornar o valor truncado.
  */
 fun converteInteiroParaBinario(inteiro: BigInteger): String {
     var aux = inteiro
     val pilha = Stack<String>()
     var binario = ""
 
-    while (aux > BigInteger.ZERO) { // Converte completamente o inteiro
+    while (aux > BigInteger.ZERO) {
         pilha.push((aux % BigInteger.TWO).toString())
         aux /= BigInteger.TWO
     }
@@ -23,8 +23,7 @@ fun converteInteiroParaBinario(inteiro: BigInteger): String {
     }
 
     if (binario.length > precisao) {
-        // FIXME Estudar a adição de um arredondamento aqui
-        println("Houve um truncamento")
+        println("Houve um truncamento da parte inteira.")
         return binario.substring(startIndex = 0, endIndex = precisao)
     }
 
@@ -48,7 +47,7 @@ fun retiraParteInteira(numero: BigDecimal) =
 /**
  *  Converte partes fracionárias de números decimais para números binários usando multiplicações sucessivas
  *  por 2. Para somente quando o número ocupa todas as casas disponíveis da mantissa, desconsiderando os primeiros 0s
- *  caso não haja casas ainda ocupadas, ou quando consegue ser convertido dentro da precisão.
+ *  caso não haja casas ainda ocupadas, ou quando consegue ser convertido dentro da precisão. Avisa se houver um trucamento.
  */
 fun converteFracionarioParaBinario(fracionario: BigDecimal, casasOcupadas: Int): String {
     var binario = ""
@@ -58,26 +57,50 @@ fun converteFracionarioParaBinario(fracionario: BigDecimal, casasOcupadas: Int):
 
     while (aux != BigDecimal.ZERO) {
         aux *= BigDecimal.TWO
+
         if (aux >= BigDecimal.ONE) {
             binario += "1"
             aux = retiraParteInteira(aux)
+
         } else {
             val numeroDeZerosNoInicio = casasDisponiveis - precisao
-            if (casasOcupadas == 0 && numeroDeZerosNoInicio == binario.length) {
+            // BigDecimal("0.0") usado pois não estava lendo BigDecimal.ZERO quando era 0.0, resultando em um loop infinito
+            if (casasOcupadas == 0 && numeroDeZerosNoInicio == binario.length && aux != BigDecimal("0.0")) {
                 // É feito essa checagem para números muito pequenos em que a precisão não comporta as casas.
                 // Ex: 0000001, precisao = 3. Para isso são desconsiderados os primeiros 0s aumentando-se o
                 // valor de casasDisponiveis.
                 binario += "0"
                 casasDisponiveis++
+
             } else binario += "0"
         }
         if (binario.length == casasDisponiveis) {
-            if (aux > BigDecimal.ZERO) println("Houve um truncamento.")
+            if (aux > BigDecimal.ZERO) println("Houve um truncamento da parte fracionaria.")
             break
         }
     }
 
     return binario
+}
+
+/**
+ * Subtrai 1 ao bit menos significativo. Se o valor do ultimo bit for 0 altera o valor do bit para 1
+ * e chama recursivamente a função com o valor do ultimo bit menos 1, faz isso até encontrar 1
+ * alterando o valor do bit para 0. Se não encontrar um bit com valor 1, imprime uma mensagem
+ * e retorna o valor do binario até o momento.
+ */
+fun subtraiBit(binario: MutableList<Char>, ultimo: Int): String {
+    if (ultimo < 0) {
+        println("Não foi possível fazer a subtração, devido ao bit ser o mais significativo")
+        return binario.joinToString("")
+    }
+    if (binario[ultimo] == '1') {
+        binario[ultimo] = '0'
+    } else {
+        binario[ultimo] = '1'
+        subtraiBit(binario, ultimo - 1);
+    }
+    return binario.joinToString("")
 }
 
 /**
@@ -90,28 +113,41 @@ fun somaBit(binario: MutableList<Char>, ultimo: Int): String {
     if (ultimo < 0) {
         println("Não foi possível fazer a soma, devido ao bit ser o mais significativo")
         // TODO Talvez tacar uma exceção aqui
-        return binario.toString()
+        return binario.joinToString("")
     }
 
-    if (binario[ultimo] == '0') {
-        binario[ultimo] = '1'
-    } else {
+    if (binario[ultimo] == '0') binario[ultimo] = '1'
+    else {
         binario[ultimo] = '0'
         somaBit(binario, ultimo - 1)
     }
 
-    return binario.toString()
+    return binario.joinToString("")
 }
 
 /**
- * Aplica complemento de 1 trocando os bit com valor 1 para 0 e 0 para 1.
+ * Retira complemento de 2 subtraindo 1 bit do valor da mantissa e aplicando complemento de 1
+ */
+fun retiraComplementoDe2(binario: String): String {
+    var mantissa = binario.substring(startIndex = 1, endIndex = binario.indexOf("*"))
+    val expoente = binario.substring(startIndex = binario.indexOf("*"))
+
+    mantissa = subtraiBit(mantissa.toMutableList(), mantissa.length - 1)
+    return aplicaComplementoDe1(".$mantissa$expoente")
+}
+
+/**
+ * Aplica complemento de 1 trocando os bit de valor 1 para 0 e 0 para 1.
  */
 fun aplicaComplementoDe1(binario: String): String {
-    return binario.map { bit ->
+    val mantissa = binario.substring(startIndex = 0, endIndex = binario.indexOf("*"))
+    val expoente = binario.substring(startIndex = binario.indexOf("*"))
+
+    return mantissa.map { bit ->
         if (bit == '1') '0'
         else if (bit == '0') '1'
         else bit
-    }.joinToString("")
+    }.joinToString("") + expoente
 }
 
 /**
@@ -119,39 +155,42 @@ fun aplicaComplementoDe1(binario: String): String {
  */
 fun aplicaComplementoDe2(numero: String): String {
     val numeroC1 = aplicaComplementoDe1(numero)
-    // val numeroC2 = somaBit(numeroC1.toMutableList(), numeroC1.length-1) FIXME
-    return numeroC1
+    val mantissa = numeroC1.substring(startIndex = 1, endIndex = numeroC1.indexOf("*"))
+    val expoente = numeroC1.substring(startIndex = numeroC1.indexOf("*"))
+    val numeroC2 = somaBit(mantissa.toMutableList(), mantissa.length - 1)
+
+    return ".$numeroC2$expoente"
 }
 
-fun desaplicaComplementoDe2(binario: String): String {
-    // TODO
-    return binario
-}
-
+/**
+ *  Converte binario normalizado retirando complemento de 2, se necessário, e os valores
+ *  da mantissa e expoente, depois flutua o ponto para a posição indicada pelo expoente.
+ *  Após desnormalizar, converte para Decimal o binário encontrado.
+ */
 fun converteBinarioNormalizadoParaDecimal(binario: String): String {
-    val mantissa = binario.substring(startIndex = 0, endIndex = binario.indexOf("*"))
-    val binarioNormalizado = mantissa.replace("0.", "").toMutableList()
-    var expoente = binario.substring(startIndex = binario.indexOf("(") + 1, endIndex = binario.indexOf(")")).toInt()
+    val binarioProcessado = if (sinal.contains("-")) retiraComplementoDe2(binario) else binario
+    val mantissa = binarioProcessado
+        .substring(startIndex = 0, endIndex = binarioProcessado.indexOf("*"))
+        .replace(".", "").toMutableList()
+    val expoente = binarioProcessado.substring(startIndex = binarioProcessado.indexOf("(") + 1, endIndex = binarioProcessado.indexOf(")")).toInt()
 
-    while (binarioNormalizado.size < precisao) {
-        binarioNormalizado.addFirst('0')
-        expoente++
-    }
-
-    var binarioDesnormalizado = flutuaPonto(expoente, binarioNormalizado)
-    if (sinal.contains("-")) {
-        binarioDesnormalizado = aplicaComplementoDe2(binarioDesnormalizado)
-    }
+    val binarioDesnormalizado = flutuaPonto(expoente, mantissa)
 
     return converteBinarioParaDecimal(binarioDesnormalizado)
 }
 
+/**
+ * Se o expoente for maior que zero, adiciona zeros ao final do binário até que o tamanho do binário
+ * seja igual ao valor do expoente, após isso coloca o ponto no indice indicado pelo valor do expoente.
+ * Se o expoente for menor que zero, adiciona zeros no início do binárioo número de vezes igual ao valor
+ * absoluto do expoente e ao final adiciona "0.". Se o expoente for zero, apenas adiciona "0." no início.
+ */
 fun flutuaPonto(expoente: Int, binario: MutableList<Char>): String {
     if (expoente > 0) {
         while (binario.size < expoente) binario.addLast('0')
         binario.add(expoente, '.')
     } else if (expoente < 0) {
-        for (i in 0..<expoente.absoluteValue) binario.addFirst('0')
+        repeat(expoente.absoluteValue) { binario.addFirst('0') }
         binario.addFirst('.')
         binario.addFirst('0')
     } else {
@@ -164,7 +203,7 @@ fun flutuaPonto(expoente: Int, binario: MutableList<Char>): String {
 /**
  * Função responsável por armazenar o sinal do decimal, retirar o sinal,
  * substituir "," por "." e caso o binário não possuir um ponto, indicando
- * que foi passado um valor inteiro, adiciona-se ".0" ao final dele
+ * que foi passado um valor inteiro, adiciona ".0" ao final dele.
  */
 fun preprocessaDecimal(decimal: String): String {
     var decimalProcessado = decimal
@@ -179,41 +218,37 @@ fun preprocessaDecimal(decimal: String): String {
     return decimalProcessado
 }
 
-// FIXME texto está explicando errado
-
 /**
- * Essa função pré-processa o decimal, separa as partes inteira e fracionária, salva o valor da parte inteira
- * em um BigInteger, converte o valor inteiro, verifica se o valor encontrado é vazio, caso isso seta o valor da
- * string como "0.". Após isso, verifica se todos os bits da mantissa foram preenchidos, se não tiverem sido
- * preenchidos, salva a parte fracionaria em um BigDecimal, converte o valor e adiciona o binário resultante.
- * Por último, usa a variável global sinal para saber se o número é negativo, se for aplica complemento de dois.
+ * Esta função pré-processa o número decimal, separa as partes inteira e fracionária,
+ * armazena a parte inteira em um BigInteger e a parte fracionária em um BigDecimal.
+ * Em seguida, converte a parte inteira para binário. Se todos os bits da mantissa não
+ * estiverem preenchidos, converte a parte fracionária e adiciona o binário resultante.
+ * Se todos os bits estiverem preenchidos, mas a parte fracionária não foi totalmente
+ * convertida, informa que houve um truncamento. Ao final, retorna o binário encontrado.
  */
 fun converteDecimalParaBinario(decimal: String): String {
     val decimalProcessado = preprocessaDecimal(decimal)
     val partes = separaPartesPeloPonto(decimalProcessado)
     val parteInteira = BigInteger(partes.first)
     val parteFracionaria = BigDecimal(partes.second)
-    var inteiroBinario = converteInteiroParaBinario(parteInteira)
-    if (inteiroBinario.isEmpty()) {
-        inteiroBinario = "0"
-    }
+    val inteiroBinario = converteInteiroParaBinario(parteInteira)
+
     var binario = "$inteiroBinario."
 
     if (binario.length - 1 < precisao) {
         val fracionarioBinario = converteFracionarioParaBinario(parteFracionaria, binario.length - 1)
         binario += fracionarioBinario
     } else if (parteFracionaria > BigDecimal.ZERO) {
-        println("Houve um truncamento.")
+        println("Houve um truncamento de toda a parte fracionaria.")
     }
-
-    if (sinal.contains("-")) {
-        binario = aplicaComplementoDe2(binario)
-    }
-    // n = 8, l = -5, u = 5, -163,63 dá overflow, mas não deveria
 
     return binario
 }
 
+/**
+ * Converte binario inteiro invertendo os bits do binario e elevando 2 ao indice para cada
+ * bit igual a 1. Retorna o decimal
+ */
 fun converteBinarioInteiroParaDecimal(binInteiro: String): BigDecimal {
     val bits = binInteiro.split("").filterNot { it.isEmpty() }
     val bitsInvertidos = bits.reversed()
@@ -226,6 +261,10 @@ fun converteBinarioInteiroParaDecimal(binInteiro: String): BigDecimal {
     return decimal
 }
 
+/**
+ * Converte binario fracionário dividindo 1 por 2 elevado ao indice + 1 para cada
+ * bit igual a 1. Retorna o decimal.
+ */
 fun converteBinarioFracionarioParaDecimal(binFracionario: String): BigDecimal {
     val bits = binFracionario
         .replace(".", "")
@@ -241,6 +280,10 @@ fun converteBinarioFracionarioParaDecimal(binFracionario: String): BigDecimal {
     return decimal
 }
 
+/**
+ * Converte o binario separando as partes dele em inteiro e fracionario e convertendo elas
+ * separadamente. Retorna a soma do resultado das duas conversões.
+ */
 fun converteBinarioParaDecimal(binario: String): String {
     val partes = separaPartesPeloPonto(binario)
     val parteInteira = partes.first
