@@ -19,13 +19,17 @@ fun apagaTela() {
  * normalizado.
  */
 fun normalizaNumero(binario: String): String {
-    var expoente = binario.indexOf('.') // Pega quantas casas há antes do ponto, útil para números com casas inteiras 100.1 -> expoente = 3 -> 0.1001 * 2^3
-    val bin = ("." + binario.replace(".", ""))
+    var binarioProcessado = binario.replace("...", "")
+    while (binarioProcessado.length-1 < precisao) binarioProcessado += "0"
+
+    var expoente = binarioProcessado.indexOf('.') // Pega quantas casas há antes do ponto, útil para números com casas inteiras 100.1 -> expoente = 3 -> 0.1001 * 2^3
+
+    val binLista = ("." + binarioProcessado.replace(".", ""))
         .split("").filterNot { it.isEmpty() }
         .toMutableList() // Retira o ponto e adiciona "." ao início. Usa filter para retirar "" que aparece no começo e final da lista
     // contains 1 por causa do zero
-    while (bin[1] == "0" && bin.contains("1")) { // Retirar os 0s após os o ponto para a casa após o ponto ficar com o valor 1 da normalização
-        bin.removeAt(1)
+    while (binLista[1] == "0" && binLista.contains("1")) { // Retirar os 0s após os o ponto para a casa após o ponto ficar com o valor 1 da normalização
+        binLista.removeAt(1)
         expoente-- // Diminui o expoente para cada 0 perdido
     }// 0.001 -> 0.1 * 2^(-2)
 
@@ -35,12 +39,17 @@ fun normalizaNumero(binario: String): String {
         println("Houve um Underflow")
     }
 
-    return "${bin.joinToString("")}*2^($expoente)"
+    var mantissa = binLista.joinToString("")
+    if (binLista.size-1 > precisao) {
+        mantissa = mantissa.substring(0, precisao+1)
+        println("Houve um truncamento.")
+    }
+    val binarioNormalizado = "${mantissa}*2^($expoente)"
+
+    return binarioNormalizado
 }
 
 fun main() {
-    println(converteBinarioNormalizadoParaDecimal(".101*2^(2)"))
-
     print(
         """
     Seja Bem vindo ao emulador de Maquinas Finitas!
@@ -49,13 +58,18 @@ fun main() {
     precisao = readln().toInt()
     apagaTela()
 
-    print("Digite o valor do expoente de menor valor l (lower): ")
-    lower = readln().toInt()
-    apagaTela()
+    do {
+        print("Digite o valor do expoente de menor valor l (lower): ")
+        lower = readln().toInt()
+        apagaTela()
 
-    print("Digite o valor do expoente de maior valor u (upper): ")
-    upper = readln().toInt()
-    apagaTela()
+        print("Digite o valor do expoente de maior valor u (upper): ")
+        upper = readln().toInt()
+        apagaTela()
+
+        if (lower >  upper)
+            println("O valor de lower não pode ser maior que o de upper, digite novamente os valores!")
+    } while (lower > upper)
 
     println("Precisao: $precisao, lower: $lower, upper: $upper")
 
@@ -77,15 +91,17 @@ fun main() {
             println("Valor decimal: $valor")
 
             val binario = converteDecimalParaBinario(valor)
-            val binarioNormalizado = normalizaNumero(binario)
-            val binarioEmComplementoDe1 = if (sinal.contains("-")) aplicaComplementoDe1(binarioNormalizado) else binarioNormalizado
-            val binarioEmComplementoDe2 = if (sinal.contains("-")) aplicaComplementoDe2(binarioNormalizado) else binarioNormalizado
-            val bitDeSinal = if (sinal == "-") "1" else "0"
-
             println("Binário encontrado: $binario")
+
+            val binarioNormalizado = normalizaNumero(binario)
             println("Número normalizado armazenado em binário: $binarioNormalizado")
+            val bitDeSinal = if (sinal == "-") "1" else "0"
             println("Em S/A: $bitDeSinal $binarioNormalizado")
+
+            val binarioEmComplementoDe1 = if (sinal.contains("-")) aplicaComplementoDe1(binarioNormalizado) else binarioNormalizado
             println("Em complemento de 1: $bitDeSinal $binarioEmComplementoDe1")
+
+            val binarioEmComplementoDe2 = if (sinal.contains("-")) aplicaComplementoDe2(binarioNormalizado) else binarioNormalizado
             println("Em complemento de 2: $bitDeSinal $binarioEmComplementoDe2")
 
             println("Valor binario normalizado convertido para decimal: ${sinal + converteBinarioNormalizadoParaDecimal(binarioEmComplementoDe2)}")

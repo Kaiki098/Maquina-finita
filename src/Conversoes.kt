@@ -6,7 +6,7 @@ import kotlin.math.absoluteValue
 /**
  * Converte um valor inteiro para binário, usando divisões sucessivas por 2 e
  * armazenando em uma pilha e depois desempilhando ela para obter os bits na ordem
- * correta. Avisa se for retornar o valor truncado.
+ * correta.
  */
 fun converteInteiroParaBinario(inteiro: BigInteger): String {
     var aux = inteiro
@@ -22,10 +22,6 @@ fun converteInteiroParaBinario(inteiro: BigInteger): String {
         binario += if (pilha.pop() == "1") "1" else "0"
     }
 
-    if (binario.length > precisao) {
-        println("Houve um truncamento da parte inteira.")
-        return binario.substring(startIndex = 0, endIndex = precisao)
-    }
 
     return binario
 }
@@ -46,38 +42,33 @@ fun retiraParteInteira(numero: BigDecimal) =
 
 /**
  *  Converte partes fracionárias de números decimais para números binários usando multiplicações sucessivas
- *  por 2. Para somente quando o número ocupa todas as casas disponíveis da mantissa, desconsiderando os primeiros 0s
+ *  por 2. Para somente quando o número é convetido ou o binário possui mais de 2048 casas, desconsiderando os primeiros 0s
  *  caso não haja casas ainda ocupadas, ou quando consegue ser convertido dentro da precisão. Avisa se houver um trucamento.
  */
-fun converteFracionarioParaBinario(fracionario: BigDecimal, casasOcupadas: Int): String {
+fun converteFracionarioParaBinario(fracionario: BigDecimal): String {
     var binario = ""
     var aux = fracionario
-    var casasDisponiveis =
-        precisao - casasOcupadas // Variável usada para controlar o número de casas para preencher a parte fracionária
 
-    while (aux != BigDecimal.ZERO) {
+    while (aux > BigDecimal.ZERO) {
+
+        if (binario.length > 2048) {
+//            100000
+//            print("Meu coração mandou")
+//            Thread.sleep(1000)
+//            repeat(3) {
+//                print(".")
+//                Thread.sleep(1000)
+//            }
+//            println()
+            return "$binario..."
+        }
         aux *= BigDecimal.TWO
 
         if (aux >= BigDecimal.ONE) {
             binario += "1"
             aux = retiraParteInteira(aux)
+        } else binario += "0"
 
-        } else {
-            val numeroDeZerosNoInicio = casasDisponiveis - precisao
-            // BigDecimal("0.0") usado pois não estava lendo BigDecimal.ZERO quando era 0.0, resultando em um loop infinito
-            if (casasOcupadas == 0 && numeroDeZerosNoInicio == binario.length && aux != BigDecimal("0.0")) {
-                // É feito essa checagem para números muito pequenos em que a precisão não comporta as casas.
-                // Ex: 0000001, precisao = 3. Para isso são desconsiderados os primeiros 0s aumentando-se o
-                // valor de casasDisponiveis.
-                binario += "0"
-                casasDisponiveis++
-
-            } else binario += "0"
-        }
-        if (binario.length == casasDisponiveis) {
-            if (aux > BigDecimal.ZERO) println("Houve um truncamento da parte fracionaria.")
-            break
-        }
     }
 
     return binario
@@ -220,10 +211,8 @@ fun preprocessaDecimal(decimal: String): String {
 /**
  * Esta função pré-processa o número decimal, separa as partes inteira e fracionária,
  * armazena a parte inteira em um BigInteger e a parte fracionária em um BigDecimal.
- * Em seguida, converte a parte inteira para binário. Se todos os bits da mantissa não
- * estiverem preenchidos, converte a parte fracionária e adiciona o binário resultante.
- * Se todos os bits estiverem preenchidos, mas a parte fracionária não foi totalmente
- * convertida, informa que houve um truncamento. Ao final, retorna o binário encontrado.
+ * Em seguida, converte a parte inteira e a fracionaria para binário, separadamente.
+ * Ao final, retorna o binário encontrado.
  */
 fun converteDecimalParaBinario(decimal: String): String {
     val decimalProcessado = preprocessaDecimal(decimal)
@@ -231,15 +220,9 @@ fun converteDecimalParaBinario(decimal: String): String {
     val parteInteira = BigInteger(partes.first)
     val parteFracionaria = BigDecimal(partes.second)
     val inteiroBinario = converteInteiroParaBinario(parteInteira)
-
-    var binario = "$inteiroBinario."
-
-    if (binario.length - 1 < precisao) {
-        val fracionarioBinario = converteFracionarioParaBinario(parteFracionaria, binario.length - 1)
-        binario += fracionarioBinario
-    } else if (parteFracionaria > BigDecimal.ZERO) {
-        println("Houve um truncamento de toda a parte fracionaria.")
-    }
+    var binario = inteiroBinario
+    val fracionarioBinario = converteFracionarioParaBinario(parteFracionaria)
+    binario += ".$fracionarioBinario"
 
     return binario
 }
