@@ -51,17 +51,8 @@ fun converteFracionarioParaBinario(fracionario: BigDecimal): String {
 
     while (aux > BigDecimal.ZERO) {
 
-        if (binario.length > 2048) {
-//            100000
-//            print("Meu coração mandou")
-//            Thread.sleep(1000)
-//            repeat(3) {
-//                print(".")
-//                Thread.sleep(1000)
-//            }
-//            println()
-            return "$binario..."
-        }
+        if (binario.length > 2048) return "$binario..."
+
         aux *= BigDecimal.TWO
 
         if (aux >= BigDecimal.ONE) {
